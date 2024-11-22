@@ -24,29 +24,29 @@ jobs:
         docker push docker.io/fulaibaowang/${TOOL}:${VERS}
     - name: Set Success env
       run: echo "GITHUB_SHA_SHORT=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-    - name: Slack Success Notification
-      run: | 
-        generate_post_data()
-        {
-          cat << EOF
-        {
-          "text": "$GITHUB_SHA_SHORT build and push completed"
-        }
-        EOF
-        } 
-        curl -H "Content-Type: application/json" -X POST -d "$(generate_post_data)" ${{ secrets.SLACK_WEBHOOK }}
+    # - name: Slack Success Notification
+    #   run: | 
+    #     generate_post_data()
+    #     {
+    #       cat << EOF
+    #     {
+    #       "text": "$GITHUB_SHA_SHORT build and push completed"
+    #     }
+    #     EOF
+    #     } 
+    #     curl -H "Content-Type: application/json" -X POST -d "$(generate_post_data)" ${{ secrets.SLACK_WEBHOOK }}
     - name: Set Failure env
       if: failure()
       run: echo "GITHUB_SHA_SHORT=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-    - name: Slack Failure Notification
-      if: failure()
-      run: | 
-        generate_post_data()
-        {
-          cat << EOF
-        {
-          "text": "$GITHUB_SHA_SHORT build and push FAILED"
-        }
-        EOF
-        } 
-        curl -H "Content-Type: application/json" -X POST -d "$(generate_post_data)" ${{ secrets.SLACK_WEBHOOK }}
+    # - name: Slack Failure Notification
+    #   if: failure()
+    #   run: | 
+    #     generate_post_data()
+    #     {
+    #       cat << EOF
+    #     {
+    #       "text": "$GITHUB_SHA_SHORT build and push FAILED"
+    #     }
+    #     EOF
+    #     } 
+    #     curl -H "Content-Type: application/json" -X POST -d "$(generate_post_data)" ${{ secrets.SLACK_WEBHOOK }}
