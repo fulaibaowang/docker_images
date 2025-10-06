@@ -1,0 +1,90 @@
+name: production
+
+on:
+  push:
+    tags: ['*']   # keep your manual/normal tag trigger
+  workflow_run:
+    workflows: ["Bump yt-dlp, create version folder, and tag"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # For workflow_run: only proceed if bump finished successfully
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # we need full refs/tags when resolving tag from workflow_run
+
+      # Derive REF/TOOL/VERS for BOTH event types
+      - name: Derive REF/TOOL/VERS
+        id: derive
+        shell: bash
+        run: |
+          set -e
+
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # We just finished the bump workflow; figure out which tag it created.
+            SHA="${{ github.event.workflow_run.head_sha }}"
+
+            # Make sure we have tags locally
+            git fetch --tags --force
+
+            # Prefer a tag that points at the exact bump commit
+            REF="$(git tag --points-at "$SHA" | grep '^youtube-' || true | tail -n1)"
+
+            if [ -z "$REF" ]; then
+              # Fallback: pick newest youtube-* tag (safe because your tags are date-based)
+              REF="$(git tag -l 'youtube-*' | sort -V | tail -n1)"
+            fi
+
+            if [ -z "$REF" ]; then
+              echo "No youtube-* tag found to build." >&2
+              exit 1
+            fi
+          else
+            # push:tags path – same behavior as before
+            REF="${GITHUB_REF#refs/*/}"
+          fi
+
+          echo "REF=$REF"
+          echo "REF=$REF" >> $GITHUB_ENV
+          echo "TOOL=$(echo "$REF" | cut -d '-' -f 1)" >> $GITHUB_ENV
+          echo "VERS=$(echo "$REF" | cut -d '-' -f 2-)" >> $GITHUB_ENV
+
+      - name: Build the Docker image
+        run: | 
+          set -e
+          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
+
+          echo "Using REF=${REF}"
+          echo "TOOL=${TOOL}  VERS=${VERS}"
+
+          git clone https://github.com/fulaibaowang/docker_images.git "${REF}"
+          cd "${REF}"
+          git checkout "${REF}"
+          cd "${TOOL}/${VERS}"
+
+          docker build --no-cache -t "docker.io/fulaibaowang/${TOOL}:${VERS}" .
+          docker push "docker.io/fulaibaowang/${TOOL}:${VERS}"
+
+      - name: Also tag & push :latest
+        if: always()
+        run: |
+          set -e
+          # Re-tag the just-pushed version as :latest and push it
+          docker pull docker.io/fulaibaowang/${TOOL}:${VERS}
+          docker tag  docker.io/fulaibaowang/${TOOL}:${VERS} docker.io/fulaibaowang/${TOOL}:latest
+          docker push docker.io/fulaibaowang/${TOOL}:latest
+
+      - name: Set Success env
+        run: echo "GITHUB_SHA_SHORT=${REF}" >> $GITHUB_ENV
+
+      - name: Set Failure env
+        if: failure()
+        run: echo "GITHUB_SHA_SHORT=${REF}" >> $GITHUB_ENV
