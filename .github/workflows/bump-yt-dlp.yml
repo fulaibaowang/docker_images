@@ -164,6 +164,17 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Show default branch and workflow context
+        run: |
+          echo "Default branch (from context): ${{ github.event.repository.default_branch }}"
+          echo "Runner actor: $GITHUB_ACTOR"
+          git rev-parse --abbrev-ref HEAD || true
+
+      - name: Show remote after PAT swap
+        run: |
+          set -e
+          git remote -v
+
       - name: Push commit
         if: steps.checks.outputs.should_run == 'true'
         run: |
