@@ -1,0 +1,11 @@
+name: _debug_tag
+on:
+  push:
+    tags: ['*']
+jobs:
+  echo:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Triggered by ref: $GITHUB_REF"
+          echo "Actor: $GITHUB_ACTOR"

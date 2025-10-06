@@ -163,6 +163,8 @@ jobs:
           set -e
           git remote set-url origin \
             https://x-access-token:${{ secrets.ACTIONS_PAT }}@github.com/${{ github.repository }}.git
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Push commit
         if: steps.checks.outputs.should_run == 'true'
@@ -179,7 +181,7 @@ jobs:
           if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
             echo "Tag already exists: ${TAG}"
           else
-            git tag -a "${TAG}" -m "yt-dlp ${{ steps.latest.outputs.latest }}"
+            git tag -e -a "${TAG}" -m "yt-dlp ${{ steps.latest.outputs.latest }}" HEAD
             git push origin "${TAG}"
             echo "Pushed tag: ${TAG}"
           fi
