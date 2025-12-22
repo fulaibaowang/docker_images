@@ -18,3 +18,9 @@ git tag -e -a kallisto-0.48.0 HEAD
 git push
 git push origin --tags
 ```
+
+remove tags
+```
+git tag -d <tag_name>
+git push --delete origin <tag_name>
+```

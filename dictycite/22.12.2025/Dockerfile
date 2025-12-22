@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # - requests: http
 # - beautifulsoup4: html->plain text
 RUN pip install --no-cache-dir \
-    polars==1.* \
+    polars[rtcompat]==1.* \
     pyarrow==17.* \
     requests==2.* \
     beautifulsoup4==4.*
