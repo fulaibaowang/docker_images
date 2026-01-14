@@ -11,6 +11,7 @@ RUN apt-get update \
        build-essential \
        python3-dev \
        wget \
+       git \
        ca-certificates \
        libxml2-dev \
        libssl-dev \
@@ -34,9 +35,10 @@ RUN Rscript -e "install.packages(c('xml2','httr','jsonlite','dplyr'), repos='htt
 # Try to install tidypmc from CRAN; if not available CRAN, user may install manually
 RUN Rscript -e "if(!requireNamespace('tidypmc', quietly=TRUE)) install.packages('tidypmc', repos='https://cloud.r-project.org')"
 
-# Create app dir and copy fetch + utils
-WORKDIR /app/article_fetching
-COPY ./article_fetching /app/article_fetching
+# Copy your script into the image
+RUN git clone https://github.com/fulaibaowang/dictycite.git
+
+WORKDIR /dictycite/article_fetching
 
 # Default entrypoint runs fetch.py; pass args through docker run
 ENTRYPOINT ["python", "fetch.py"]
