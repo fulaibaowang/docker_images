@@ -77,10 +77,7 @@ RUN pip install --no-cache-dir -U pip setuptools wheel && \
       python-terrier \
       ranx \
       beautifulsoup4 \
-      transformers \
-      sentence-transformers \
-      accelerate \
-      torch
+      accelerate
 
 # Copy your parsing script into the image
 COPY parse_pubmed_local.py /app/parse_pubmed_local.py
