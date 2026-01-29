@@ -141,7 +141,7 @@ def iter_records_from_xml_gz(gz_path: Path) -> Iterable[Dict]:
     """
     parser = etree.XMLParser(recover=True, huge_tree=True)
     with gzip.open(gz_path, "rb") as fh:
-        for _, elem in etree.iterparse(fh, events=("end",), parser=parser):
+        for _, elem in etree.iterparse(fh, events=("end",)):
             if elem.tag == "MedlineCitation":
                 rec = parse_article_record(elem)
                 if rec is not None:
