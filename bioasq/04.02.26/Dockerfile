@@ -92,8 +92,8 @@ RUN python -m pip install --no-cache-dir \
 # -----
 # Clone your repo
 # -----
-RUN git clone https://github.com/fulaibaowang/BioASQ.git /app/bioasq
-WORKDIR /app/bioasq
+# RUN git clone https://github.com/fulaibaowang/BioASQ.git /app/bioasq
+# WORKDIR /app/bioasq
 
 # -----
 # Optional: verify GPU is visible at container runtime
