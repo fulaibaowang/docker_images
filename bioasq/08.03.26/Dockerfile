@@ -44,9 +44,6 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python
 RUN pip install nltk rank_bm25
 RUN python -c "import nltk; nltk.download('punkt_tab'); nltk.download('punkt')"
 
-#new for gemma
-RUN pip install --no-cache-dir -U FlagEmbedding
-RUN python -c "from FlagEmbedding import FlagLLMReranker; print('ok')"
 # Make Java available for PyTerrier
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
@@ -92,10 +89,13 @@ RUN python -m pip install --no-cache-dir \
   jupyterlab \
   matplotlib \
   scikit-learn \
+  transformers==4.44.2 \
   sentence-transformers \
-  transformers \
   hnswlib
 
+#new for FlagEmbedding
+RUN pip install --no-cache-dir -U FlagEmbedding==1.3.4
+RUN python -c "from FlagEmbedding import FlagLLMReranker; print('ok')"
 # -----
 # Clone your repo
 # -----
