@@ -10,6 +10,10 @@
 # syntax=docker/dockerfile:1
 FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
 
+# Avoid interactive prompts (e.g. tzdata) during apt install in CI
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
 # -----
 # System packages + Python 3.11 (RankLLM recommends 3.11)
 # -----
