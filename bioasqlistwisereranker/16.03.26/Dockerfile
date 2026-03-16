@@ -58,13 +58,16 @@ RUN python3 -m pip install --no-cache-dir \
     torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 
 # -----
-# Pin transformers + tokenizers to compatible versions FIRST.
-# transformers 4.44.x needs tokenizers ~0.19.x; rank-llm uses
-# find_pruneable_heads_and_indices which was removed in transformers >= 4.45.
+# Install all HuggingFace ecosystem packages together so pip resolves them consistently.
+# transformers 4.44.x needs tokenizers ~0.19.x and huggingface-hub <1.0;
+# rank-llm uses find_pruneable_heads_and_indices which was removed in transformers >= 4.45.
 # -----
 RUN python3 -m pip install --no-cache-dir \
     "transformers==4.44.2" \
-    "tokenizers>=0.19,<0.20"
+    "tokenizers>=0.19,<0.20" \
+    "huggingface-hub>=0.23,<1.0" \
+    "accelerate<1.0" \
+    sentencepiece
 
 # -----
 # RankLLM without [all] to avoid vLLM and its torch==2.6.0 pin.
@@ -73,14 +76,11 @@ RUN python3 -m pip install --no-cache-dir \
 # -----
 RUN python3 -m pip install --no-cache-dir --no-deps rank-llm
 
-# Install rank-llm's other deps (excluding transformers, torch, tokenizers which we control).
+# Install rank-llm's remaining deps (excluding HF ecosystem which we already installed).
 # Use --ignore-installed to avoid failures on distutils-installed packages (e.g. blinker).
-# Exclude pyserini for now (it pulls incompatible tokenizers); LiT5 doesn't need it.
 RUN python3 -m pip install --no-cache-dir --ignore-installed \
-    accelerate \
     dacite \
     ftfy \
-    sentencepiece \
     tiktoken \
     openai
 
