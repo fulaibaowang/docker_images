@@ -6,21 +6,21 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# # Keep the vLLM stack from the base image stable.
-# # Add the packages your script actually imports / benefits from.
-# RUN uv pip install --system \
-#     numpy \
-#     pandas \
-#     matplotlib \
-#     tqdm \
-#     transformers \
-#     tokenizers \
-#     huggingface_hub \
-#     accelerate \
-#     jupyterlab \
-#     ipykernel \
-#     jupytext \
-#     faiss-cpu
+# Keep the vLLM stack from the base image stable.
+# Add the packages your script actually imports / benefits from.
+RUN uv pip install --system \
+    numpy \
+    pandas \
+    matplotlib \
+    tqdm \
+    transformers \
+    tokenizers \
+    huggingface_hub \
+    accelerate \
+    jupyterlab \
+    ipykernel \
+    jupytext \
+    faiss-cpu
 
 # # Install RankLLM without trying to replace the base image's vLLM/torch stack.
 # RUN uv pip install --system --no-deps rank-llm==0.25.7
