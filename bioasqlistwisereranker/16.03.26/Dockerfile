@@ -82,7 +82,8 @@ RUN python3 -m pip install --no-cache-dir --ignore-installed \
     dacite \
     ftfy \
     tiktoken \
-    openai
+    openai \
+    python-dotenv
 
 # -----
 # Rest of deps for the listwise notebook (paths, eval, tokenizer, plots)
@@ -94,6 +95,24 @@ RUN python3 -m pip install --no-cache-dir \
     tqdm \
     jupyterlab
 
+# -----
+# Diagnostic verification: fail the build if critical imports don't work.
+# This catches dependency issues at build time, not runtime.
+# -----
+RUN python3 -c "\
+import sys; \
+print('Python:', sys.version); \
+import torch; print('torch:', torch.__version__); \
+import transformers; print('transformers:', transformers.__version__); \
+import tokenizers; print('tokenizers:', tokenizers.__version__); \
+import huggingface_hub; print('huggingface_hub:', huggingface_hub.__version__); \
+import accelerate; print('accelerate:', accelerate.__version__); \
+from transformers import AutoTokenizer; print('AutoTokenizer: ok'); \
+from rank_llm.data import Request, Candidate, Query; print('rank_llm.data: ok'); \
+from rank_llm.rerank import Reranker; print('rank_llm.rerank.Reranker: ok'); \
+from rank_llm.rerank.listwise.rank_fid import RankFiDDistill; print('RankFiDDistill: ok'); \
+print('All imports OK')"
+
 # Optional: project code is mounted at /app; ensure shared_scripts can be used
 # by running from repo root: docker run -v $(pwd):/app -w /app ...
-CMD ["bash", "-lc", "python3 -c \"import torch; from rank_llm.rerank.listwise.rank_fid import RankFiDDistill; print('torch', torch.__version__); print('cuda', torch.cuda.is_available()); print('RankFiDDistill ok')\""]
+CMD ["bash", "-lc", "python3 -c \"import torch; print('torch', torch.__version__); print('cuda available', torch.cuda.is_available())\""]
