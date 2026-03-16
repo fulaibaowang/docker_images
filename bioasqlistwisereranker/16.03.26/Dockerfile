@@ -69,8 +69,9 @@ RUN python3 -m pip install --no-cache-dir "transformers>=4.44,<4.45"
 # LiT5 (RankFiDDistill) does not require vLLM.
 # -----
 RUN python3 -m pip install --no-cache-dir --no-deps rank-llm
-# Install rank-llm's other deps (excluding transformers, torch which we control)
-RUN python3 -m pip install --no-cache-dir \
+# Install rank-llm's other deps (excluding transformers, torch which we control).
+# Use --ignore-installed to avoid failures on distutils-installed packages (e.g. blinker).
+RUN python3 -m pip install --no-cache-dir --ignore-installed \
     accelerate \
     dacite \
     ftfy \
