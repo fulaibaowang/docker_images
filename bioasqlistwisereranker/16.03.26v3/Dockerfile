@@ -2,66 +2,71 @@ FROM vllm/vllm-openai:v0.11.0
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    HF_HOME=/root/.cache/huggingface
+    HF_HOME=/root/.cache/huggingface \
+    MPLBACKEND=Agg \
+    TOKENIZERS_PARALLELISM=false \
+    VLLM_ENABLE_V1_MULTIPROCESSING=0 \
+    VLLM_WORKER_MULTIPROC_METHOD=spawn
 
 WORKDIR /app
 
-# Keep the vLLM stack from the base image stable.
-# Add the packages your script actually imports / benefits from.
+# Keep the vLLM / torch stack from the base image stable.
+# Add only the extra packages this notebook/script uses for analysis and plotting.
 RUN uv pip install --system \
     numpy \
     pandas \
     matplotlib \
     tqdm \
-    transformers \
-    tokenizers \
-    huggingface_hub \
-    accelerate \
-    jupyterlab \
-    ipykernel \
-    jupytext \
     faiss-cpu
 
-# # Install RankLLM without trying to replace the base image's vLLM/torch stack.
-# RUN uv pip install --system --no-deps rank-llm==0.25.7
+# Install RankLLM without letting pip replace the base image's curated vLLM stack.
+RUN uv pip install --system --no-deps rank-llm==0.25.7 && \
+    python3 -m pip install --no-cache-dir dacite ftfy openai tiktoken pydantic requests
 
-# # Optional: only if later you want RankLLM's built-in retriever / pyserini path
-# # RUN apt-get update && apt-get install -y openjdk-21-jre-headless maven && rm -rf /var/lib/apt/lists/*
-# # RUN uv pip install --system "rank-llm[pyserini]"
+# Patch RankLLM so importing the Zephyr path does not eagerly import the older
+# generic Reranker / LiT5 code path, which can conflict with the newer
+# Transformers stack bundled in the vLLM image.
+RUN python3 - <<'PY'
+from pathlib import Path
+import shutil
+import site
 
-# # Build-time smoke test: imports + tokenizer, but no full 7B weights.
-# RUN python - <<'PY'
-# import sys
-# print("Python:", sys.version)
+for p in site.getsitepackages():
+    init_py = Path(p) / "rank_llm" / "rerank" / "__init__.py"
+    if init_py.exists():
+        backup = init_py.with_suffix(".py.bak")
+        shutil.copy2(init_py, backup)
+        text = init_py.read_text(encoding="utf-8")
+        text = text.replace("from .reranker import Reranker\n", "")
+        init_py.write_text(text, encoding="utf-8")
+        print(f"Patched {init_py} (backup: {backup})")
+        break
+else:
+    raise SystemExit("Could not find rank_llm/rerank/__init__.py to patch")
+PY
 
-# import vllm
-# print("vllm:", vllm.__version__)
+# Build-time smoke test: verify the exact import path needed by the patched script.
+RUN python3 - <<'PY'
+import sys
+print("Python:", sys.version)
 
-# import numpy as np
-# import pandas as pd
-# import matplotlib
-# from tqdm.auto import tqdm
-# import transformers
-# import tokenizers
-# import huggingface_hub
-# import accelerate
+import vllm
+print("vllm:", vllm.__version__)
 
-# print("numpy:", np.__version__)
-# print("pandas:", pd.__version__)
-# print("matplotlib:", matplotlib.__version__)
-# print("transformers:", transformers.__version__)
-# print("tokenizers:", tokenizers.__version__)
-# print("huggingface_hub:", huggingface_hub.__version__)
-# print("accelerate:", accelerate.__version__)
+import numpy as np
+import pandas as pd
+import matplotlib
+import tqdm
+print("numpy:", np.__version__)
+print("pandas:", pd.__version__)
+print("matplotlib:", matplotlib.__version__)
+print("tqdm:", tqdm.__version__)
 
-# from transformers import AutoTokenizer
-# tok = AutoTokenizer.from_pretrained("castorini/rank_zephyr_7b_v1_full")
-# print("tokenizer:", tok.__class__.__name__)
+from rank_llm.data import Request, Candidate, Query
+print("rank_llm.data: ok")
 
-# from rank_llm.data import Request, Candidate, Query
-# from rank_llm.rerank import Reranker
-# from rank_llm.rerank.listwise import ZephyrReranker
+from rank_llm.rerank.listwise import ZephyrReranker
+print("ZephyrReranker: ok")
 
-# print("rank_llm imports OK")
-# print("All imports OK")
-# PY
+print("All Zephyr-side imports OK")
+PY
