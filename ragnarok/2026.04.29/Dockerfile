@@ -28,12 +28,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Java for Anserini (Pyserini wraps the Anserini fatjar via JNI).
-# Pyserini 0.44+ ships Anserini 0.36 which targets Java 21; fall back to 17
-# if the runtime exposes only that.
+# Pyserini 0.44+ ships Anserini 0.36 which targets Java 21; fall back to 17.
+# We need the JDK (not just the JRE) because pyjnius locates the JVM by
+# resolving javac — the JRE does not ship javac and pyjnius will throw
+# "Unable to find javac" at import time.
 RUN apt-get update && \
-    (apt-get install -y --no-install-recommends openjdk-21-jre-headless \
-     || apt-get install -y --no-install-recommends openjdk-17-jre-headless) && \
+    (apt-get install -y --no-install-recommends openjdk-21-jdk-headless \
+     || apt-get install -y --no-install-recommends openjdk-17-jdk-headless) && \
     rm -rf /var/lib/apt/lists/*
+
+# Point JAVA_HOME at the system default so pyjnius/jnius never has to search.
+ENV JAVA_HOME=/usr/lib/jvm/default-java
 
 # Same extras as Dockerfile.listwise.
 RUN uv pip install --system \
