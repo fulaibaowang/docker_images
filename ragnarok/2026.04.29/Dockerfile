@@ -83,6 +83,13 @@ PY
 # Base image often has distutils-installed blinker; pip refuses to uninstall it.
 RUN python3 -m pip install "pyserini==0.44.0" --ignore-installed blinker
 
+# Re-pin protobuf / numpy to versions the vLLM base image's other packages
+# (lmcache, opentelemetry-proto, ...) require — pyserini's resolver bumped
+# them past those bounds.
+RUN python3 -m pip install --no-deps \
+    "protobuf<7.0,>=5.0" \
+    "numpy<=2.2.6"
+
 # trec_eval is handy for spot-checking; the project also has its own evaluator.
 RUN python3 -m pip install pytrec_eval
 
@@ -101,8 +108,9 @@ from rank_llm.data import Request, Candidate, Query  # noqa: F401
 from rank_llm.rerank.listwise import ZephyrReranker  # noqa: F401
 print('rank_llm.listwise.ZephyrReranker: ok')
 
-import pyserini
-print('pyserini:', pyserini.__version__)
+import pyserini  # noqa: F401
+from importlib.metadata import version as _pkg_version
+print('pyserini:', _pkg_version('pyserini'))
 
 from pyserini.search.lucene import LuceneSearcher  # noqa: F401
 print('pyserini.LuceneSearcher: ok')
