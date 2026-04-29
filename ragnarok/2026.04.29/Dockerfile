@@ -80,7 +80,8 @@ PY
 # Anserini/Pyserini for BM25 indexing + search.
 # Use plain pip (not --no-deps) — pyserini pulls a Lucene fatjar and a small
 # set of Java-binding helpers that we want.
-RUN python3 -m pip install "pyserini==0.44.0"
+# Base image often has distutils-installed blinker; pip refuses to uninstall it.
+RUN python3 -m pip install "pyserini==0.44.0" --ignore-installed blinker
 
 # trec_eval is handy for spot-checking; the project also has its own evaluator.
 RUN python3 -m pip install pytrec_eval
