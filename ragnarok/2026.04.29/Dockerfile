@@ -32,12 +32,22 @@ WORKDIR /app
 # We need the JDK (not just the JRE) because pyjnius locates the JVM by
 # resolving javac — the JRE does not ship javac and pyjnius will throw
 # "Unable to find javac" at import time.
+#
+# After install we derive JAVA_HOME from the real `java` binary and create a
+# stable /usr/lib/jvm/default-java symlink: openjdk-*-jdk-headless on this
+# base image does NOT set up the `default-java` convenience symlink, which
+# pyjnius would otherwise expect (it looks for libjvm.so under
+# $JAVA_HOME/lib/server/). Pinning a known-good symlink also keeps the path
+# stable across the 21 / 17 fallback above.
 RUN apt-get update && \
     (apt-get install -y --no-install-recommends openjdk-21-jdk-headless \
      || apt-get install -y --no-install-recommends openjdk-17-jdk-headless) && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    JAVA_BIN="$(readlink -f "$(command -v java)")" && \
+    JAVA_HOME_DIR="$(dirname "$(dirname "$JAVA_BIN")")" && \
+    ln -sfn "$JAVA_HOME_DIR" /usr/lib/jvm/default-java && \
+    test -f /usr/lib/jvm/default-java/lib/server/libjvm.so
 
-# Point JAVA_HOME at the system default so pyjnius/jnius never has to search.
 ENV JAVA_HOME=/usr/lib/jvm/default-java
 
 # Same extras as Dockerfile.listwise.
