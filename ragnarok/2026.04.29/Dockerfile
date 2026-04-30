@@ -83,17 +83,18 @@ else:
 PY
 
 # Anserini/Pyserini for BM25 indexing + search.
-# Use plain pip (not --no-deps) — pyserini pulls a Lucene fatjar and a small
-# set of Java-binding helpers that we want.
-# Base image often has distutils-installed blinker; pip refuses to uninstall it.
-RUN python3 -m pip install "pyserini==0.44.0" --ignore-installed blinker
+# Pyserini pulls Flask (via its server bits), which wants a newer blinker than
+# the apt-installed `python3-blinker` (1.4, distutils-style). Pip refuses to
+# uninstall distutils packages, so we purge it via apt first. We deliberately
+# do NOT use --ignore-installed: that flag is global (not per-package) and
+# would make pip re-resolve the entire dep graph, blowing away the vLLM
+# image's pinned torch / transformers / nvidia-cu13 / setuptools / numpy /
+# protobuf stack.
+RUN apt-get update && \
+    apt-get purge -y python3-blinker || true && \
+    rm -rf /var/lib/apt/lists/*
 
-# Re-pin protobuf / numpy to versions the vLLM base image's other packages
-# (lmcache, opentelemetry-proto, ...) require — pyserini's resolver bumped
-# them past those bounds.
-RUN python3 -m pip install --no-deps \
-    "protobuf<7.0,>=5.0" \
-    "numpy<=2.2.6"
+RUN python3 -m pip install "pyserini==0.44.0"
 
 # trec_eval is handy for spot-checking; the project also has its own evaluator.
 RUN python3 -m pip install pytrec_eval
