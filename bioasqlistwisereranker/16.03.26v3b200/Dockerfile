@@ -4,7 +4,7 @@
 # Keep the official vLLM base because it is the least fragile route for B200.
 # You can override the base at build time, e.g.:
 #   docker build --build-arg VLLM_BASE_IMAGE=vllm/vllm-openai:latest -f Dockerfile.listwise.b200 -t bioasq-listwise-b200 .
-ARG VLLM_BASE_IMAGE=vllm/vllm-openai:latest
+ARG VLLM_BASE_IMAGE=vllm/vllm-openai:v0.17.1
 FROM ${VLLM_BASE_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
